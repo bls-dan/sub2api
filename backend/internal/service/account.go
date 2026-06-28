@@ -1317,7 +1317,10 @@ func (a *Account) SupportsOpenAIImageCapability(capability OpenAIImagesCapabilit
 	}
 	switch capability {
 	case OpenAIImagesCapabilityBasic, OpenAIImagesCapabilityNative:
-		return a.Type == AccountTypeOAuth || a.Type == AccountTypeAPIKey
+		// Keep user-facing image requests on the native /v1/images/* endpoints.
+		// OpenAI OAuth accounts currently bridge image generation through Responses,
+		// so they are intentionally excluded from image scheduling here.
+		return a.Type == AccountTypeAPIKey
 	default:
 		return true
 	}

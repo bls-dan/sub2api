@@ -620,6 +620,39 @@ export interface UpdateApiKeyRequest {
   reset_rate_limit_usage?: boolean
 }
 
+export type ImageStudioMode = 'generate' | 'edit'
+
+export interface ImageGeneratePayload {
+  model: string
+  prompt: string
+  size: string
+  quality: string
+  background: string
+  output_format: string
+  n: number
+}
+
+export interface ImageEditPayload extends ImageGeneratePayload {
+  image: File
+  mask?: File | null
+}
+
+export interface ImageResultItem {
+  b64_json?: string
+  url?: string
+  revised_prompt?: string
+  mime_type?: string
+  output_format?: string
+}
+
+export interface ImageAPIError {
+  status: number
+  message: string
+  type?: string
+  code?: string
+  param?: string
+}
+
 export interface CreateGroupRequest {
   name: string
   description?: string | null

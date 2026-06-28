@@ -30,3 +30,15 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar image studio navigation', () => {
+  it('keeps the user image studio entry between usage and available channels', () => {
+    const usageIndex = componentSource.indexOf("{ path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true }")
+    const imageStudioIndex = componentSource.indexOf("{ path: '/image-studio', label: t('nav.imageStudio'), icon: SparklesIcon, hideInSimpleMode: true }")
+    const availableChannelsIndex = componentSource.indexOf("{ path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels }")
+
+    expect(usageIndex).toBeGreaterThan(-1)
+    expect(imageStudioIndex).toBeGreaterThan(usageIndex)
+    expect(availableChannelsIndex).toBeGreaterThan(imageStudioIndex)
+  })
+})
