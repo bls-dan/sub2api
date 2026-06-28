@@ -5,9 +5,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+IMAGE_TAG="${SUB2API_IMAGE:-sub2api:latest}"
 
-docker build -t sub2api:latest \
+docker build -t "${IMAGE_TAG}" \
     --build-arg GOPROXY=https://goproxy.cn,direct \
     --build-arg GOSUMDB=sum.golang.google.cn \
-    -f "${REPO_ROOT}/Dockerfile" \
+    -f "${REPO_ROOT}/deploy/Dockerfile" \
     "${REPO_ROOT}"

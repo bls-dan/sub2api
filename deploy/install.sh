@@ -3,6 +3,7 @@
 # Sub2API Installation Script
 # Sub2API 安装脚本
 # Usage: curl -sSL https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/install.sh | bash
+# Custom fork: SUB2API_GITHUB_REPO=owner/repo bash deploy/install.sh upgrade
 #
 
 set -e
@@ -31,7 +32,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-GITHUB_REPO="Wei-Shaw/sub2api"
+GITHUB_REPO="${SUB2API_GITHUB_REPO:-Wei-Shaw/sub2api}"
 INSTALL_DIR="/opt/sub2api"
 SERVICE_NAME="sub2api"
 SERVICE_USER="sub2api"
