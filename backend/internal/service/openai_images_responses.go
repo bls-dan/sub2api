@@ -1133,7 +1133,7 @@ func (s *OpenAIGatewayService) handleOpenAIImagesOAuthNonStreamingResponse(
 	if err != nil {
 		return OpenAIUsage{}, 0, nil, err
 	}
-	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	writeTransformedOpenAIImagesResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	c.Data(resp.StatusCode, "application/json; charset=utf-8", responseBody)
 	return usage, len(results), openAIResponsesImageResultSizes(results), nil
 }
@@ -1146,10 +1146,9 @@ func (s *OpenAIGatewayService) handleOpenAIImagesOAuthStreamingResponse(
 	streamPrefix string,
 	fallbackModel string,
 ) (OpenAIUsage, int, []string, *int, error) {
-	responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
+	writeTransformedOpenAIImagesResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
 	c.Status(resp.StatusCode)
 
 	flusher, ok := c.Writer.(http.Flusher)
@@ -1489,6 +1488,24 @@ func (s *OpenAIGatewayService) handleOpenAIImagesOAuthStreamingResponse(
 			lastDownstreamWriteAt = time.Now()
 		}
 	}
+}
+
+func writeTransformedOpenAIImagesResponseHeaders(dst http.Header, src http.Header, filter *responseheaders.CompiledHeaderFilter) {
+	filtered := responseheaders.FilterHeaders(src, filter)
+	for _, key := range []string{
+		"Content-Type",
+		"Content-Encoding",
+		"Content-Language",
+		"Content-Location",
+		"Content-MD5",
+		"Digest",
+		"ETag",
+		"Last-Modified",
+		"Vary",
+	} {
+		filtered.Del(key)
+	}
+	responseheaders.WriteFilteredHeaders(dst, filtered, filter)
 }
 
 func (s *OpenAIGatewayService) forwardOpenAIImagesOAuth(

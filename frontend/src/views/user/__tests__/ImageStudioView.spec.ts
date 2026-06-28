@@ -152,9 +152,14 @@ describe('ImageStudioView', () => {
     fetchPublicSettings.mockReset()
     showError.mockReset()
     fetchPublicSettings.mockResolvedValue(null)
-    vi.stubGlobal('URL', class extends URL {
-      static createObjectURL = vi.fn(() => 'blob:preview-url')
-      static revokeObjectURL = vi.fn()
+    vi.stubGlobal('FileReader', class {
+      result: string | ArrayBuffer | null = null
+      onload: (() => void) | null = null
+
+      readAsDataURL(file: File) {
+        this.result = `data:${file.type};base64,preview`
+        this.onload?.()
+      }
     })
   })
 

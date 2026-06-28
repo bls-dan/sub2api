@@ -502,23 +502,15 @@ function normalizeResults(items: ImageResultItem[], fallbackFormat: string): Dis
     .filter((item): item is DisplayImageItem => item !== null)
 }
 
-function revokeSourcePreviewUrls() {
-  sourcePreviewUrls.value.forEach((url) => URL.revokeObjectURL(url))
-  sourcePreviewUrls.value = []
-}
-
 function clearSourceImages() {
   sourceImages.value = []
-  revokeSourcePreviewUrls()
+  sourcePreviewUrls.value = []
 }
 
 function removeSourceImage(index: number) {
   const nextImages = [...sourceImages.value]
   const nextUrls = [...sourcePreviewUrls.value]
-  const [removedUrl] = nextUrls.splice(index, 1)
-  if (removedUrl) {
-    URL.revokeObjectURL(removedUrl)
-  }
+  nextUrls.splice(index, 1)
   nextImages.splice(index, 1)
   sourceImages.value = nextImages
   sourcePreviewUrls.value = nextUrls
@@ -543,10 +535,15 @@ function addSourceImages(files: File[]) {
 
   const acceptedFiles = imageFiles.slice(0, availableSlots)
   sourceImages.value = [...sourceImages.value, ...acceptedFiles]
-  sourcePreviewUrls.value = [
-    ...sourcePreviewUrls.value,
-    ...acceptedFiles.map((file) => URL.createObjectURL(file)),
-  ]
+  acceptedFiles.forEach((file) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (sourceImages.value.includes(file) && typeof reader.result === 'string') {
+        sourcePreviewUrls.value = [...sourcePreviewUrls.value, reader.result]
+      }
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 function handleSourceSelection(event: Event) {
