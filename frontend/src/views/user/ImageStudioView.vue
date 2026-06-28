@@ -60,16 +60,20 @@
                 @paste="handleImagePaste"
               >
                   <div class="px-5 pt-5">
-                    <div v-if="sourcePreviewUrl" class="mb-3">
-                      <div class="group relative inline-flex">
+                    <div v-if="sourcePreviewUrls.length > 0" class="mb-3 flex flex-wrap gap-2">
+                      <div
+                        v-for="(previewUrl, index) in sourcePreviewUrls"
+                        :key="previewUrl"
+                        class="group relative inline-flex"
+                      >
                         <button
                           type="button"
                           class="block overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5"
-                          @click="previewSourceImage"
+                          @click="previewSourceImage(index)"
                         >
                           <img
-                            :src="sourcePreviewUrl"
-                            :alt="t('imageStudio.fields.sourceImage')"
+                            :src="previewUrl"
+                            :alt="`${t('imageStudio.fields.sourceImage')} ${index + 1}`"
                             class="h-20 w-20 object-cover md:h-24 md:w-24"
                           />
                         </button>
@@ -77,7 +81,7 @@
                           type="button"
                           class="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-red-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"
                           :aria-label="t('imageStudio.actions.removeFile')"
-                          @click.stop="clearSourceImage"
+                          @click.stop="removeSourceImage(index)"
                         >
                           <Icon name="x" size="sm" />
                           <span class="sr-only">{{ t('imageStudio.actions.removeFile') }}</span>
@@ -101,11 +105,12 @@
                             data-testid="source-image-input"
                             type="file"
                             accept="image/*"
+                            multiple
                             class="hidden"
                             @change="handleSourceSelection"
                           />
                           <Icon name="upload" size="sm" class="mr-2" />
-                          {{ sourceImage ? t('imageStudio.actions.replaceSource') : t('imageStudio.actions.uploadSource') }}
+                          {{ sourceImages.length > 0 ? t('imageStudio.actions.addSource') : t('imageStudio.actions.uploadSource') }}
                         </label>
 
                         <div class="studio-select studio-select-key">
@@ -360,8 +365,9 @@ const inlineError = ref('')
 const keyLoadError = ref('')
 const isSubmitting = ref(false)
 const results = ref<DisplayImageItem[]>([])
-const sourceImage = ref<File | null>(null)
-const sourcePreviewUrl = ref('')
+const maxSourceImages = 4
+const sourceImages = ref<File[]>([])
+const sourcePreviewUrls = ref<string[]>([])
 const isDraggingImage = ref(false)
 const previewItem = ref<DisplayImageItem | null>(null)
 const lastRequestMode = ref<ImageStudioMode>('generate')
@@ -424,7 +430,7 @@ const selectedKeyLabel = computed(() =>
   selectedApiKey.value ? `${selectedApiKey.value.name} · ${maskApiKey(selectedApiKey.value.key)}` : t('imageStudio.empty.noKeySelected'),
 )
 const emptyStateDescription = computed(() => keyLoadError.value || t('imageStudio.empty.noKeysDescription'))
-const currentMode = computed<ImageStudioMode>(() => (sourceImage.value ? 'edit' : 'generate'))
+const currentMode = computed<ImageStudioMode>(() => (sourceImages.value.length > 0 ? 'edit' : 'generate'))
 const modeLabel = computed(() => t(`imageStudio.tabs.${currentMode.value}`))
 const promptPlaceholder = computed(() =>
   currentMode.value === 'generate'
@@ -438,7 +444,7 @@ const activeModeLabel = computed(() => {
 const canSubmit = computed(() => {
   if (isSubmitting.value || !selectedApiKey.value) return false
   if (!form.value.prompt.trim()) return false
-  if (currentMode.value === 'edit' && !sourceImage.value) return false
+  if (currentMode.value === 'edit' && sourceImages.value.length === 0) return false
   return true
 })
 const submitButtonText = computed(() => {
@@ -496,45 +502,62 @@ function normalizeResults(items: ImageResultItem[], fallbackFormat: string): Dis
     .filter((item): item is DisplayImageItem => item !== null)
 }
 
-function updateSourcePreview(file: File | null) {
-  if (sourcePreviewUrl.value) {
-    URL.revokeObjectURL(sourcePreviewUrl.value)
-    sourcePreviewUrl.value = ''
-  }
-  if (file) {
-    sourcePreviewUrl.value = URL.createObjectURL(file)
-  }
+function revokeSourcePreviewUrls() {
+  sourcePreviewUrls.value.forEach((url) => URL.revokeObjectURL(url))
+  sourcePreviewUrls.value = []
 }
 
-function clearSourceImage() {
-  sourceImage.value = null
-  updateSourcePreview(null)
+function clearSourceImages() {
+  sourceImages.value = []
+  revokeSourcePreviewUrls()
 }
 
-function previewSourceImage() {
-  if (!sourcePreviewUrl.value || !sourceImage.value) return
+function removeSourceImage(index: number) {
+  const nextImages = [...sourceImages.value]
+  const nextUrls = [...sourcePreviewUrls.value]
+  const [removedUrl] = nextUrls.splice(index, 1)
+  if (removedUrl) {
+    URL.revokeObjectURL(removedUrl)
+  }
+  nextImages.splice(index, 1)
+  sourceImages.value = nextImages
+  sourcePreviewUrls.value = nextUrls
+}
+
+function previewSourceImage(index: number) {
+  const previewUrl = sourcePreviewUrls.value[index]
+  const image = sourceImages.value[index]
+  if (!previewUrl || !image) return
   previewItem.value = {
-    src: sourcePreviewUrl.value,
-    mimeType: sourceImage.value.type || 'image/png',
+    src: previewUrl,
+    mimeType: image.type || 'image/png',
   }
 }
 
-function setSourceImage(file: File | null) {
-  if (!file || !file.type.startsWith('image/')) return
-  sourceImage.value = file
-  updateSourcePreview(file)
+function addSourceImages(files: File[]) {
+  const imageFiles = files.filter((file) => file.type.startsWith('image/'))
+  if (imageFiles.length === 0) return
+
+  const availableSlots = maxSourceImages - sourceImages.value.length
+  if (availableSlots <= 0) return
+
+  const acceptedFiles = imageFiles.slice(0, availableSlots)
+  sourceImages.value = [...sourceImages.value, ...acceptedFiles]
+  sourcePreviewUrls.value = [
+    ...sourcePreviewUrls.value,
+    ...acceptedFiles.map((file) => URL.createObjectURL(file)),
+  ]
 }
 
 function handleSourceSelection(event: Event) {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0] ?? null
-  setSourceImage(file)
+  addSourceImages(Array.from(input.files ?? []))
   input.value = ''
 }
 
-function getImageFile(files: FileList | File[] | null | undefined): File | null {
-  if (!files) return null
-  return Array.from(files).find((file) => file.type.startsWith('image/')) ?? null
+function getImageFiles(files: FileList | File[] | null | undefined): File[] {
+  if (!files) return []
+  return Array.from(files).filter((file) => file.type.startsWith('image/'))
 }
 
 function handleDragLeave(event: DragEvent) {
@@ -547,14 +570,14 @@ function handleDragLeave(event: DragEvent) {
 
 function handleImageDrop(event: DragEvent) {
   isDraggingImage.value = false
-  setSourceImage(getImageFile(event.dataTransfer?.files))
+  addSourceImages(getImageFiles(event.dataTransfer?.files))
 }
 
 function handleImagePaste(event: ClipboardEvent) {
-  const file = getImageFile(event.clipboardData?.files)
-  if (!file) return
+  const files = getImageFiles(event.clipboardData?.files)
+  if (files.length === 0) return
   event.preventDefault()
-  setSourceImage(file)
+  addSourceImages(files)
 }
 
 async function loadKeys() {
@@ -590,7 +613,7 @@ async function submit() {
     inlineError.value = t('imageStudio.errors.promptRequired')
     return
   }
-  if (currentMode.value === 'edit' && !sourceImage.value) {
+  if (currentMode.value === 'edit' && sourceImages.value.length === 0) {
     inlineError.value = t('imageStudio.errors.sourceImageRequired')
     return
   }
@@ -618,7 +641,7 @@ async function submit() {
       })
       : await imagesAPI.edit({
         ...basePayload,
-        image: sourceImage.value!,
+        image: sourceImages.value,
       }, {
         apiKey: selectedApiKey.value.key,
         apiBaseUrl: apiBaseUrl.value,
@@ -648,7 +671,7 @@ function downloadImage(item: DisplayImageItem, index: number) {
 onMounted(loadKeys)
 
 onBeforeUnmount(() => {
-  updateSourcePreview(null)
+  clearSourceImages()
 })
 </script>
 

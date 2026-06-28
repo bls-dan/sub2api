@@ -633,7 +633,7 @@ export interface ImageGeneratePayload {
 }
 
 export interface ImageEditPayload extends ImageGeneratePayload {
-  image: File
+  image: File | File[]
   mask?: File | null
 }
 

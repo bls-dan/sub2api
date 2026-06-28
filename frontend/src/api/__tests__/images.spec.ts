@@ -132,6 +132,35 @@ describe('images api', () => {
     expect(formData.get('mask')).toBe(mask)
   })
 
+  it('sends multiple edit images as repeated multipart image fields', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ data: [] }),
+    })
+
+    const images = [
+      new File(['image-1'], 'source-1.png', { type: 'image/png' }),
+      new File(['image-2'], 'source-2.png', { type: 'image/png' }),
+    ]
+
+    await editImage({
+      model: 'gpt-image-2',
+      prompt: 'merge references',
+      size: 'auto',
+      quality: 'high',
+      background: 'auto',
+      output_format: 'png',
+      n: 1,
+      image: images,
+    }, {
+      apiKey: 'sk-test',
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    const formData = init.body as FormData
+    expect(formData.getAll('image')).toEqual(images)
+  })
+
   it('surfaces standard upstream error payloads', async () => {
     fetchMock.mockResolvedValue({
       ok: false,

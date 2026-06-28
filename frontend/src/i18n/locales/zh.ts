@@ -6971,7 +6971,7 @@ export default {
     hints: {
       generatePrompt: '尽量明确主体、光线、构图和风格，结果会更稳定。',
       editPrompt: '描述需要保留的部分、需要修改的内容，以及你想要的变化力度。',
-      sourceImage: '可选。上传参考图后会自动切换到编辑模式。',
+      sourceImage: '可选。最多 4 张，上传参考图后会自动切换到编辑模式。',
       maskImage: '可选。上传原图后会自动切换到编辑模式，遮罩图可用于局部修改。',
     },
     actions: {
@@ -6981,6 +6981,7 @@ export default {
       editing: '编辑中...',
       download: '下载',
       uploadSource: '上传参考图',
+      addSource: '添加参考图',
       replaceSource: '更换参考图',
       uploadMask: '上传遮罩',
       replaceMask: '更换遮罩',
@@ -7025,7 +7026,7 @@ export default {
       noKeysTitle: '请先创建 API 密钥',
       noKeysDescription: '生图工作台至少需要一个可用的 API 密钥，才能发送图片请求。',
       noKeySelected: '未选择密钥',
-      sourceImage: '不上传则直接生图。',
+      sourceImage: '不上传则直接生图，最多可传 4 张。',
       maskImage: '可选遮罩图预览会显示在这里。',
       resultsTitle: '还没有图片结果',
       resultsDescription: '发起一次生图或编辑请求后，结果会显示在这里。',

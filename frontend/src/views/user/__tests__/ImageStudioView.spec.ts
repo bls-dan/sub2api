@@ -258,11 +258,39 @@ describe('ImageStudioView', () => {
     await flushPromises()
 
     expect(edit).toHaveBeenCalledWith(expect.objectContaining({
-      image: file,
+      image: [file],
       background: 'auto',
     }), expect.objectContaining({
       apiKey: 'sk-primary-1234',
     }))
+  })
+
+  it('limits reference images to four files', async () => {
+    list.mockResolvedValue({
+      items: [{ id: 1, name: 'Primary', key: 'sk-primary-1234', status: 'active' }],
+    })
+    edit.mockResolvedValue({
+      data: [{ b64_json: 'bXVsdGk=', revised_prompt: 'multi refs', output_format: 'png' }],
+    })
+
+    const wrapper = mountView()
+    await flushPromises()
+
+    const files = Array.from({ length: 5 }, (_, index) =>
+      new File([`image-${index}`], `source-${index}.png`, { type: 'image/png' }),
+    )
+    await wrapper.get('textarea').trigger('paste', {
+      clipboardData: {
+        files,
+      },
+    })
+    await wrapper.get('textarea').setValue('multi refs')
+    await wrapper.get('[data-testid="image-studio-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(edit).toHaveBeenCalledWith(expect.objectContaining({
+      image: files.slice(0, 4),
+    }), expect.anything())
   })
 
   it('shows readable request errors from the gateway', async () => {

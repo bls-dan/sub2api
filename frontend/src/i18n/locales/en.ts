@@ -6818,7 +6818,7 @@ export default {
     hints: {
       generatePrompt: 'Be explicit about subject, lighting, framing, and style for more stable results.',
       editPrompt: 'Describe what should stay, what should change, and how strong the transformation should feel.',
-      sourceImage: 'Optional. Uploading a reference image automatically switches this page into edit mode.',
+      sourceImage: 'Optional. Up to 4 reference images. Uploading one automatically switches this page into edit mode.',
       maskImage: 'Optional. Uploading a source image switches the page into edit mode automatically, and a mask lets you target a specific area.',
     },
     actions: {
@@ -6828,6 +6828,7 @@ export default {
       editing: 'Editing...',
       download: 'Download',
       uploadSource: 'Upload Reference',
+      addSource: 'Add Reference',
       replaceSource: 'Replace Reference',
       uploadMask: 'Upload Mask',
       replaceMask: 'Replace Mask',
@@ -6872,7 +6873,7 @@ export default {
       noKeysTitle: 'Create an API key first',
       noKeysDescription: 'Image Studio needs at least one active API key before it can send image requests.',
       noKeySelected: 'No key selected',
-      sourceImage: 'Leave this empty to stay in generate mode.',
+      sourceImage: 'Leave this empty to stay in generate mode. Up to 4 images.',
       maskImage: 'Optional mask preview will appear here.',
       resultsTitle: 'No images yet',
       resultsDescription: 'Run a generate or edit request to preview images here.',

@@ -119,7 +119,10 @@ export async function editImage(
   if (payload.background.trim()) {
     formData.append('background', payload.background.trim())
   }
-  formData.append('image', payload.image)
+  const images = Array.isArray(payload.image) ? payload.image : [payload.image]
+  images.forEach((image) => {
+    formData.append('image', image)
+  })
   if (payload.mask) {
     formData.append('mask', payload.mask)
   }
